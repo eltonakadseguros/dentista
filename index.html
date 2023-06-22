@@ -134,7 +134,7 @@
                             <input type="text" name="email" id="email" v-model="form.email" placeholder="Digite o email para contato">
                         </div>
 
-                        <div class="col-12 mt-4">
+                        <div class="col-12 mt-4" v-if="personalType == 1">
                             <label for="cro">CRO</label>
                             <input type="text" name="cro" id="cro" v-model="form.cro" placeholder="Digite o número do CRO">
                         </div>
@@ -152,9 +152,9 @@
                             <label for="">Atividade Segurada</label>
 
                             <div class="mb-4 mt-4">
-                                <span class="infoInput f-16">Selecione uma ou mais atividades abaixo</span>
+                                <span class="infoInput f-16">Selecione uma atividades abaixo</span>
                             </div>
-                            <div v-for="option in especialidadeOption" :key="option.value" class="box-check">
+                            <!-- <div v-for="option in especialidadeOption" :key="option.value" class="box-check">
                                 <input 
                                     class="checkbox form-check-input" 
                                     type="checkbox" 
@@ -166,7 +166,13 @@
                                 <label :for="option.value" class="label-especialidade">
                                     {{ option.text }}
                                 </label>
-                            </div>
+                            </div> -->
+
+                            <select v-model="form.especialidade" @change="updatEspecialty(form.especialidade)">
+                                <option v-for="option in especialidadeOption" v-bind:value="option.value">
+                                    {{ option.text }}
+                                </option>
+                            </select>
                         </div>
 
                         <div class="col-12" v-if="token !== ''">
@@ -1754,7 +1760,7 @@
                         email: '',
                         cpf: '',
                         cnpj: '',
-                        especialidade: [],
+                        especialidade: '',
                         cro: '',
                         invoicing: '',
                         sinistrality: '',
@@ -2114,7 +2120,7 @@
                 },
                 updatePersonType(type) {
                     this.personalType = type
-                    this.form.especialidade = []
+                    this.form.especialidade = ''
                     this.form.insuredAmount = ''
                 },
                 back() {
@@ -2206,14 +2212,14 @@
                                 return false
                             }
 
-                            return this.form.name !== '' && this.form.cpf !== '' && this.form.cro !== '' && this.form.email !== '' && this.form.especialidade.length > 0
+                            return this.form.name !== '' && this.form.cpf !== '' && this.form.cro !== '' && this.form.email !== '' && this.form.especialidade !== ''
                         }
 
                         if (!this.isCNPJ) {
                             return false
                         }
 
-                        return this.form.name !== '' && this.form.cnpj !== '' && this.form.invoicing !== '' && this.form.email !== '' && this.form.especialidade.length > 0 && this.personalType !== null
+                        return this.form.name !== '' && this.form.cnpj !== '' && this.form.invoicing !== '' && this.form.email !== '' && this.form.especialidade !== '' && this.personalType !== null
                     }
                     if (page == 2) {
                         if(this.form.sinistrality == '') {
@@ -2270,12 +2276,8 @@
                     return number == this.pageActive
                 },
                 updatEspecialty(valor) {
-                    let name = ''
-                    valor.forEach(element => {
-                        const newname = this.especialidadeOption.filter(especialidade => especialidade.value === element)[0].text
-                        name = name == '' ? newname : `${name}, ${newname}`
-                    });
-                    this.activity = name
+                    const name = this.especialidadeOption.filter(especialidade => especialidade.value === valor)[0]
+                    this.activity = name.text
                     this.getDeductibles()
                     this.getInsuredAmount()
                 },
@@ -2289,15 +2291,16 @@
                     const operationCode = this.personalType == 1 ? this.operationCode : this.operationCodePj
                     const subscriptionKey = this.personalType == 1 ? this.subscriptionKey : this.subscriptionKeyPj
                     let questionId5 = this.personalType == 2 ? this.form.invoicing : this.form.cro
-                    let questionId6 = this.personalType == 2 ? this.form.cro : this.form.sinistrality
-                    let questionId7 = this.personalType == 2 ? this.form.sinistrality : this.form.numberComplaints
-                    let questionId11 = this.personalType == 2 ? "1" : this.form.retroactivity
                     let identity = this.personalType == 2 ? this.form.cnpj : this.form.cpf
 
                     const riskAnalysis = [
                         {
                             "questionId": "1",
                             "answer": "1"
+                        },
+                        {
+                            "questionId": "3",
+                            "answer": this.form.especialidade
                         },
                         {
                             "questionId": "4",
@@ -2309,11 +2312,11 @@
                         },
                         {
                             "questionId": "6",
-                            "answer": questionId6
+                            "answer": this.form.sinistrality
                         },
                         {
                             "questionId": "7",
-                            "answer": questionId7
+                            "answer": this.form.numberComplaints
                         },
                         {
                             "questionId": "8",
@@ -2321,7 +2324,7 @@
                         },
                         {
                             "questionId": "11",
-                            "answer": questionId11
+                            "answer": this.form.retroactivity
                         }
                          ,
                         {
@@ -2329,13 +2332,6 @@
                             "answer": 1
                         }
                     ]
-
-                    this.form.especialidade.forEach(element => {
-                        riskAnalysis.push({
-                            "questionId": "3",
-                            "answer": element
-                        })
-                    });
 
                     if (this.form.know == 1) {
                         riskAnalysis.push({
@@ -2347,17 +2343,7 @@
                     if (this.personalType == 2) {
                         riskAnalysis.push({
                             "questionId": "10",
-                            "answer": this.form.numberComplaints
-                        })
-
-                        riskAnalysis.push({
-                            "questionId": "12",
-                            "answer": this.form.retroactivity
-                        })
-
-                        riskAnalysis.push({
-                            "questionId": "13",
-                            "answer": "2"
+                            "answer": 1
                         })
                     }
 
@@ -2436,7 +2422,7 @@
                         "questions": [
                             {
                                 "questionId": questionIdDeductibles,
-                                "answers": this.form.especialidade
+                                "answers": [this.form.especialidade]
                             }
                         ],
                         "operationCode": operationCode
@@ -2476,7 +2462,7 @@
                         "questions": [
                             {
                                 "questionId": "3",
-                                "answers": this.form.especialidade
+                                "answers": [this.form.especialidade]
                             }
                         ],
                         "operationCode": operationCode
