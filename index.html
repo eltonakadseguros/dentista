@@ -176,7 +176,7 @@
                         </div>
 
                         <div class="col-12" v-if="token !== ''">
-                            <button class="buttonAkad" @click="leadCold" :disabled="!validateForm(1)" id="btn-advance-page-1">
+                            <button class="buttonAkad" @click="leadCold()" :disabled="!validateForm(1)" id="btn-advance-page-1">
                                 <span>Avançar</span>
                                 <div class="p-1">
                                     <svg width="10" height="16" viewBox="0 0 10 16" fill="none"
@@ -387,6 +387,7 @@
                                     <label for="rua">Telefone</label>
                                     <input type="text" v-maska data-maska="['(##) ####-####', '(##) # ####-####']"
                                         name="phoneNumber" id="phoneNumber" v-model="form.phoneNumber" placeholder="(--) ---- ----">
+                                    <div v-if="form.phoneNumber.length > 0 && form.phoneNumber.length < 14">Telefone incompleto</div>
                                 </div>
                                 <div class="col-12 mt-4" v-if="personalType == 1">
                                     <label for="">Gênero</label>
@@ -465,7 +466,7 @@
                                 </div>
 
                                 <div class="col-12 mt-4">
-                                    <button class="buttonAkad" @click="leadHot(2)"
+                                    <button class="buttonAkad" @click="leadCold(2)"
                                         :disabled="!validateForm(4)" id="btn-advance-page-4">Iniciar contratação</button>
                                 </div>
                             </div>
@@ -517,7 +518,7 @@
                                     </select>
                                 </div>
                                 <div class="col-12 mt-4">
-                                    <button class="buttonAkad" @click="leadHot(3)" :disabled="!validateForm(5)" id="btn-advance-page-5">
+                                    <button class="buttonAkad" @click="leadCold(3)" :disabled="!validateForm(5)" id="btn-advance-page-5">
                                         <span>Avançar</span>
                                         <div class="p-1">
                                             <svg width="10" height="16" viewBox="0 0 10 16" fill="none"
@@ -611,6 +612,9 @@
                                             v-model="form.cardExpirationDate" placeholder="00/0000" v-maska
                                             data-maska="##/####" @input="nextInput2">
                                     </div>
+                                    <div v-if="messageCardExpitarionDate">
+                                        <span>mm/aaaa</span>
+                                    </div>
                                 </div>
                                 <div class="col-6 mt-4" v-if="form.paymentMethodId > 1">
                                     <label for="cardSecurityCode" class="nowrap">CVV</label>
@@ -619,7 +623,7 @@
                                 </div>
 
                                 <div class="col-12 mt-4">
-                                    <button class="buttonAkad" @click="leadHot(4)" :disabled="!validateForm(6)" id="btn-advance-page-6">
+                                    <button class="buttonAkad" @click="leadCold(4)" :disabled="!validateForm(6)" id="btn-advance-page-6">
                                         <span>Avançar</span>
                                         <div class="p-1">
                                             <svg width="10" height="16" viewBox="0 0 10 16" fill="none"
@@ -1646,13 +1650,13 @@
                     subscriptionKeyPj: '4c05e23d6dce47f78c997079e598823a',
                     operationIdPf: "37",
                     operationIdPj: "36",
-                    brokerIdentityPartyAdmin: '14868712000131',
+                    brokerIdentityPartyAdmin: '81510015000',
                     brokerInfo: {
-                        cnpj: "07753626000118",
-                        susepNumber: "1232132132",
-                        name: "Akad Seguros Ltda",
-                        email: "nomail@nomail.com",
-                        brokerageFirmName: "Akadseguros",
+                        cnpj: '07753626000118',
+                        susepNumber: '202075848',
+                        name: 'Akad Seguros Brasil Corretora',
+                        email: 'nomail@akad.com.br',
+                        brokerageFirmName: 'Akad Seguros',
                     },
                     companyInfo: {
                         emailComercial: "akad@akad.com.br",
@@ -2029,40 +2033,64 @@
 
                     return true
 
-                }
+                },
+                messageCardExpitarionDate() {
+                    const totalCaracter = this.form.cardExpirationDate.length;
+                    return totalCaracter > 0 && totalCaracter < 7;
+                },
+                wrongPhone() {
+                    const totalCaracter = this.form.phoneNumber.length;
+                    return totalCaracter >= 0 && totalCaracter < 14;
+                },
             },
             methods: {
-                leadCold() {
-                    this.pageActive++
-
-                    const operationId = this.personalType == 1 ? this.operationIdPf : this.operationIdPj
-
-                    const raw = {
-                        "operationId": operationId,
-                        "name": this.form.name,
-                        "firstName": this.form.name,
-                        "lastName": this.form.name,
-                        "email": this.form.email,
-                        "location": "São Paulo, SP",
-                        "brokerageFirmIdentity" : this.brokerInfo.cnpj
-                    };
-
-                    const subscriptionKey = this.subscriptionKeyLead
-
-                    const config = {
-                        headers: {
-                            "Content-Type": "application/json",
-                            'Ocp-Apim-Subscription-Key': subscriptionKey
-                        }
+                leadCold(status = null) {
+                    if (status !== 5) {
+                    this.pageActive++;
                     }
 
-                    axios.post(`${this.base_url}/quotation/api/lead`, JSON.stringify(raw), config)
-                        .then((response) => {
-                            this.identifierLead = response.data.identifier
-                        })
-                        .catch((error) => {
-                            console.log(error);
-                        })
+                    const operationId = this.personalType == 1 ? this.operationIdPf : this.operationIdPj;
+
+                    const raw = {
+                    operationId: operationId,
+                    name: this.form.name,
+                    firstName: this.form.name,
+                    lastName: this.form.name,
+                    email: this.form.email,
+                    brokerageFirmIdentity: this.brokerInfo.cnpj,
+                    };
+
+                    if (status) {
+                    raw.identifier = this.identifierLead;
+                    raw.status = status;
+                    raw.PhoneNumber = this.form.phoneNumber;
+                    }
+
+                    if (this.form.state) {
+                    raw.location = `${this.form.city} ,${this.form.state}`;
+                    }
+
+                    const subscriptionKey = this.subscriptionKeyLead;
+
+                    const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Ocp-Apim-Subscription-Key': subscriptionKey,
+                    },
+                    };
+
+                    axios
+                    .post(`${this.base_url}/quotation/api/lead`, JSON.stringify(raw), config)
+                    .then((response) => {
+                        if (status) {
+                        console.log('lead ok');
+                        } else {
+                        this.identifierLead = response.data.identifier;
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
                 },
                 leadHot(status) {
 
@@ -2251,9 +2279,9 @@
 
                         }
                         if (this.personalType == 1) {
-                            return this.form.birthDate !== '' && this.form.phoneNumber !== '' && this.form.gender !== ''
+                            return this.form.birthDate !== '' && !this.wrongPhone && this.form.gender !== ''
                         }
-                        return this.form.phoneNumber !== ''
+                        return !this.wrongPhone;
                     }
 
                     if (page == 5) {
@@ -2626,7 +2654,7 @@
                             this.documents = response.data.documents[0]
                             this.pageActive = 8
                             this.loading = false
-                            this.leadHot(5)
+                            this.leadCold(5)
                         })
                         .catch((error) => {
                             this.loading = false
@@ -2668,7 +2696,7 @@
                     .then(result => {
                         this.loading = false;
                         this.token = result.access_token
-                        console.log('v.1.00.1');
+                        console.log('v.1.00.2');
                     })
                     .catch((error) => {
                         this.loading = false;
