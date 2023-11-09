@@ -660,7 +660,7 @@
                                                 <span class="infoInput nowrap">E-mail:</span>
                                                 <b class="text-end bNegrito">{{form.email}}</b>
                                             </div>
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex justify-content-between align-items-center" v-if="personalType == 1">
                                                 <span class="infoInput nowrap">
                                                     CRO:
                                                 </span>
@@ -2390,6 +2390,10 @@
 
                     if (this.campaignId > 0 ) {
                         raw.campaignId = this.campaignId
+                    }
+
+                    if (this.affinityGroupConditionId > 0 ) {
+                        raw.affinityGroupConditionId = this.affinityGroupConditionId
                     }
 
                     let config = {
